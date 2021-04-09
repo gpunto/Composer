@@ -1,4 +1,7 @@
-import androidx.compose.desktop.AppManager
+@file:JvmName("MainKt")
+
+package dev.gianmarcodavid.composer
+
 import androidx.compose.desktop.Window
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -19,9 +22,13 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.*
+import androidx.compose.ui.window.KeyStroke
+import androidx.compose.ui.window.Menu
+import androidx.compose.ui.window.MenuBar
+import androidx.compose.ui.window.MenuItem
+import java.util.regex.Pattern
 
-private var config by mutableStateOf(280)
+private val settings = Settings()
 
 fun main() = Window(
     title = "Composer",
@@ -33,27 +40,14 @@ fun main() = Window(
     val focusRequester = FocusRequester()
 
     Box(Modifier.background(Color.White)) {
-        TextField(
-            value = textState,
-            onValueChange = { textState = it },
-            colors = TextFieldDefaults.textFieldColors(
-                backgroundColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
-            ),
-            textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
-            modifier = Modifier
-                .focusRequester(focusRequester)
-                .fillMaxWidth()
-                .fillMaxHeight()
-                .padding(40.dp)
+        mainTextArea(
+            textState,
+            { textState = it },
+            focusRequester
         )
-
-        val charCountFrom = textState.charCountFrom("---")
-        Text(
-            text = "$charCountFrom/${config}",
-            modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp),
-            color = if (charCountFrom > config) Color.Red else Color.Black
+        charCounter(
+            textState,
+            Modifier.align(Alignment.BottomEnd).padding(20.dp)
         )
     }
 
@@ -61,49 +55,57 @@ fun main() = Window(
         focusRequester.requestFocus()
         onDispose { }
     }
-    settingsDialog()
+    settings.dialog()
 }
 
-private val openDialog = mutableStateOf(false)
+@Composable
+private fun mainTextArea(
+    text: String,
+    onValueChange: (String) -> Unit,
+    focusRequester: FocusRequester
+) {
+    TextField(
+        value = text,
+        onValueChange = onValueChange,
+        colors = TextFieldDefaults.textFieldColors(
+            backgroundColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent
+        ),
+        textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
+        modifier = Modifier
+            .focusRequester(focusRequester)
+            .fillMaxWidth()
+            .fillMaxHeight()
+            .padding(40.dp)
+    )
+}
+
+@Composable
+private fun charCounter(text: String, modifier: Modifier) {
+    val charCountFrom = text.charCountFrom(settings.config.delimiter)
+    Text(
+        text = "$charCountFrom/${settings.config.maxChars}",
+        modifier = modifier,
+        color = if (charCountFrom > settings.config.maxChars) Color.Red else Color.Black
+    )
+}
+
+private fun String.charCountFrom(delimiter: String): Int {
+    val delimiterEndIndex = Regex(Pattern.quote(delimiter) + "\\s*")
+        .findAll(this)
+        .lastOrNull()
+        ?.range
+        ?.last
+        ?: -1
+
+    return length - delimiterEndIndex - 1
+}
 
 private fun menuBar() = MenuBar(
     Menu(
         "File",
-        MenuItem("Settings", { openDialog.value = true }, KeyStroke(Key.K))
+        MenuItem("Settings", { settings.showDialog() }, KeyStroke(Key.K))
     )
 )
 
-@Composable
-private fun settingsDialog() {
-    if (openDialog.value) {
-        var textState by remember { mutableStateOf("") }
-        val focusRequester = FocusRequester()
-
-        val location = AppManager.windows.last().window.location.run { IntOffset(x, y) }
-        Dialog(
-            {
-                textState.toIntOrNull()?.let { config = it }
-                openDialog.value = false
-            },
-            DialogProperties(centered = false, location = location, title = "Settings")
-        ) {
-            TextField(
-                value = textState,
-                onValueChange = { textState = it.filter(Char::isDigit) },
-                textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
-                modifier = Modifier.focusRequester(focusRequester).fillMaxWidth().padding(10.dp)
-            )
-        }
-
-        DisposableEffect(Unit) {
-            focusRequester.requestFocus()
-            onDispose { }
-        }
-    }
-}
-
-private fun String.charCountFrom(delimiter: String): Int {
-    val delimiterIndex = lastIndexOf(delimiter)
-    return if (delimiterIndex < 0) length
-    else length - delimiterIndex - delimiter.length
-}
