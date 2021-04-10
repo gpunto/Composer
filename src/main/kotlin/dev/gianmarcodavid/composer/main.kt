@@ -19,7 +19,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.KeyStroke
@@ -32,8 +31,7 @@ private val settings = Settings()
 
 fun main() = Window(
     title = "Composer",
-    centered = false,
-    location = IntOffset(0, 1080),
+    centered = true,
     menuBar = menuBar()
 ) {
     var textState by remember { mutableStateOf("") }
@@ -83,7 +81,7 @@ private fun mainTextArea(
 
 @Composable
 private fun charCounter(text: String, modifier: Modifier) {
-    val charCountFrom = text.charCountFrom(settings.config.delimiter)
+    val charCountFrom = text.charCountFrom(settings.config.delimiter, settings.config.ignoreBlankSpace)
     Text(
         text = "$charCountFrom/${settings.config.maxChars}",
         modifier = modifier,
@@ -91,15 +89,25 @@ private fun charCounter(text: String, modifier: Modifier) {
     )
 }
 
-private fun String.charCountFrom(delimiter: String): Int {
-    val delimiterEndIndex = Regex(Pattern.quote(delimiter) + "\\s*")
+private fun String.charCountFrom(delimiter: String, ignoreBlankSpace: Boolean): Int {
+    val delimiterEndIndex =
+        if (ignoreBlankSpace) ignoringBlankSpaceIndex(delimiter)
+        else withBlankSpaceIndex(delimiter)
+
+    return length - delimiterEndIndex - 1
+}
+
+private fun String.ignoringBlankSpaceIndex(delimiter: String) =
+    Regex(Pattern.quote(delimiter) + "\\s*")
         .findAll(this)
         .lastOrNull()
         ?.range
         ?.last
         ?: -1
 
-    return length - delimiterEndIndex - 1
+private fun String.withBlankSpaceIndex(delimiter: String): Int {
+    val index = lastIndexOf(delimiter)
+    return if (index >= 0) index + delimiter.length - 1 else -1
 }
 
 private fun menuBar() = MenuBar(
