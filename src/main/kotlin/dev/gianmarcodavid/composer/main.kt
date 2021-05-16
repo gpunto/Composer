@@ -4,10 +4,7 @@ package dev.gianmarcodavid.composer
 
 import androidx.compose.desktop.Window
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
@@ -29,31 +26,38 @@ import java.util.regex.Pattern
 
 private val settings = Settings()
 
+private val textStorage = TextStorage().also(TextStorage::start)
+
 fun main() = Window(
     title = "Composer",
     centered = true,
-    menuBar = menuBar()
+    menuBar = menuBar(),
 ) {
-    var textState by remember { mutableStateOf("") }
-    val focusRequester = FocusRequester()
+    AppTheme {
+        var textState by remember { mutableStateOf(textStorage.initial()) }
 
-    Box(Modifier.background(Color.White)) {
-        mainTextArea(
-            textState,
-            { textState = it },
-            focusRequester
-        )
-        charCounter(
-            textState,
-            Modifier.align(Alignment.BottomEnd).padding(20.dp)
-        )
-    }
+        val focusRequester = FocusRequester()
 
-    DisposableEffect(Unit) {
-        focusRequester.requestFocus()
-        onDispose { }
+        Box(Modifier.background(Color.White).fillMaxWidth()) {
+            Box(modifier = Modifier.widthIn(max = 800.dp).fillMaxWidth().align(Alignment.TopCenter)) {
+                mainTextArea(
+                    textState,
+                    { textState = it; textStorage.store(it) },
+                    focusRequester
+                )
+                charCounter(
+                    textState,
+                    Modifier.align(Alignment.BottomEnd).padding(20.dp)
+                )
+            }
+        }
+
+        DisposableEffect(Unit) {
+            focusRequester.requestFocus()
+            onDispose { }
+        }
+        settings.dialog()
     }
-    settings.dialog()
 }
 
 @Composable
@@ -70,7 +74,7 @@ private fun mainTextArea(
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent
         ),
-        textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
+        textStyle = LocalTextStyle.current.copy(fontFamily = Fonts.firaCode(), fontSize = 16.sp),
         modifier = Modifier
             .focusRequester(focusRequester)
             .fillMaxWidth()
