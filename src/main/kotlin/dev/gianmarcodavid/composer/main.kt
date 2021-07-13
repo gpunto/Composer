@@ -18,10 +18,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.KeyStroke
-import androidx.compose.ui.window.Menu
-import androidx.compose.ui.window.MenuBar
-import androidx.compose.ui.window.MenuItem
+import androidx.compose.ui.window.v1.KeyStroke
+import androidx.compose.ui.window.v1.Menu
+import androidx.compose.ui.window.v1.MenuBar
+import androidx.compose.ui.window.v1.MenuItem
+import java.awt.event.KeyEvent
 import java.util.regex.Pattern
 
 private val settings = Settings()
@@ -117,7 +118,7 @@ private fun String.withBlankSpaceIndex(delimiter: String): Int {
 private fun menuBar() = MenuBar(
     Menu(
         "File",
-        MenuItem("Settings", { settings.showDialog() }, KeyStroke(Key.K))
+        MenuItem("Settings", settings::showDialog, KeyStroke(Key(KeyEvent.VK_K)))
     )
 )
 
