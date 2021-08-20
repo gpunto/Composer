@@ -1,6 +1,5 @@
 package dev.gianmarcodavid.composer
 
-import androidx.compose.desktop.AppManager
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -9,14 +8,13 @@ import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.*
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.v1.Dialog
-import androidx.compose.ui.window.v1.DialogProperties
+import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.rememberDialogState
 
 class Settings {
 
@@ -35,13 +33,12 @@ class Settings {
             var delimiter by remember { mutableStateOf(config.delimiter) }
             var ignoreSpace by remember { mutableStateOf(config.ignoreBlankSpace) }
 
-            val location = AppManager.windows.last().window.location.run { IntOffset(x, y) }
             Dialog(
-                {
+                onCloseRequest = {
                     updateConfig(maxChars, delimiter, ignoreSpace)
                     openDialog = false
                 },
-                DialogProperties(centered = false, location = location, title = "Settings")
+                state = rememberDialogState(position = WindowPosition(Alignment.Center))
             ) {
                 Column {
                     maxCharsInput(maxChars) { maxChars = it }

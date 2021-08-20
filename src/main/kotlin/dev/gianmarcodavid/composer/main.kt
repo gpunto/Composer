@@ -2,7 +2,6 @@
 
 package dev.gianmarcodavid.composer
 
-import androidx.compose.desktop.Window
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.LocalTextStyle
@@ -16,12 +15,10 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyShortcut
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.v1.KeyStroke
-import androidx.compose.ui.window.v1.Menu
-import androidx.compose.ui.window.v1.MenuBar
-import androidx.compose.ui.window.v1.MenuItem
+import androidx.compose.ui.window.*
 import java.awt.event.KeyEvent
 import java.util.regex.Pattern
 
@@ -29,35 +26,47 @@ private val settings = Settings()
 
 private val textStorage = TextStorage().also(TextStorage::start)
 
-fun main() = Window(
-    title = "Composer",
-    centered = true,
-    menuBar = menuBar(),
-) {
-    AppTheme {
-        var textState by remember { mutableStateOf(textStorage.initial()) }
-
-        val focusRequester = FocusRequester()
-
-        Box(Modifier.background(Color.White).fillMaxWidth()) {
-            Box(modifier = Modifier.widthIn(max = 800.dp).fillMaxWidth().align(Alignment.TopCenter)) {
-                mainTextArea(
-                    textState,
-                    { textState = it; textStorage.store(it) },
-                    focusRequester
-                )
-                charCounter(
-                    textState,
-                    Modifier.align(Alignment.BottomEnd).padding(20.dp)
-                )
+fun main() = application {
+    Window(
+        title = "Composer",
+        state = WindowState(position = WindowPosition(Alignment.Center)),
+        onCloseRequest = ::exitApplication
+    ) {
+        AppTheme {
+            MenuBar {
+                Menu("File") {
+                    Item(
+                        "Settings",
+                        onClick = settings::showDialog,
+                        shortcut = KeyShortcut(Key(KeyEvent.VK_K), meta = true)
+                    )
+                }
             }
-        }
 
-        DisposableEffect(Unit) {
-            focusRequester.requestFocus()
-            onDispose { }
+            var textState by remember { mutableStateOf(textStorage.initial()) }
+
+            val focusRequester = FocusRequester()
+
+            Box(Modifier.background(Color.White).fillMaxWidth()) {
+                Box(modifier = Modifier.widthIn(max = 800.dp).fillMaxWidth().align(Alignment.TopCenter)) {
+                    mainTextArea(
+                        textState,
+                        { textState = it; textStorage.store(it) },
+                        focusRequester
+                    )
+                    charCounter(
+                        textState,
+                        Modifier.align(Alignment.BottomEnd).padding(20.dp)
+                    )
+                }
+            }
+
+            DisposableEffect(Unit) {
+                focusRequester.requestFocus()
+                onDispose { }
+            }
+            settings.dialog()
         }
-        settings.dialog()
     }
 }
 
@@ -114,11 +123,3 @@ private fun String.withBlankSpaceIndex(delimiter: String): Int {
     val index = lastIndexOf(delimiter)
     return if (index >= 0) index + delimiter.length - 1 else -1
 }
-
-private fun menuBar() = MenuBar(
-    Menu(
-        "File",
-        MenuItem("Settings", settings::showDialog, KeyStroke(Key(KeyEvent.VK_K)))
-    )
-)
-
